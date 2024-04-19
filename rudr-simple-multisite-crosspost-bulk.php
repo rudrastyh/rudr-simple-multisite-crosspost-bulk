@@ -4,7 +4,7 @@
  * Author: Misha Rudrastyh
  * Author URI: https://rudrastyh.com
  * Description: Allows to crosspost multiple posts at once.
- * Version: 1.4
+ * Version: 1.5
  * Network: true
  */
 
@@ -15,9 +15,8 @@ add_action( 'admin_init', function() {
 		return;
 	}
 
-	$post_types = get_post_types( array( 'public' => true ) );
+	$post_types = get_post_types( array( 'show_ui' => true ) );
 	$allowed_post_types = ( $allowed_post_types = get_site_option( 'rudr_smc_post_types' ) ) ? $allowed_post_types : array();
-	$allowed_post_types = apply_filters( 'rudr_crosspost_allowed_post_types', $allowed_post_types );
 
 	if( $allowed_post_types && is_array( $allowed_post_types ) ) {
 		$post_types = array_intersect( $post_types, $allowed_post_types );
@@ -47,12 +46,12 @@ function rudr_crosspost_bulk_actions( $bulk_array ) {
 // Doing Crosspost
 function rudr_crosspost_handle_bulk_actions( $redirect, $doaction, $object_ids ) {
 
-	$redirect = remove_query_arg(
-		array( 'rudr_crosspost_too_much_to_crosspost', 'rudr_crosspost_done' ),
-		$redirect
-	);
-
 	if( 'crosspost_to_' === substr( $doaction, 0, 13 ) ) {
+
+		$redirect = remove_query_arg(
+			array( 'rudr_crosspost_too_much_to_crosspost', 'rudr_connected', 'rudr_crossposted' ),
+			$redirect
+		);
 
 		if( count( $object_ids ) > 40 ) {
 			return add_query_arg( 'rudr_crosspost_too_much_to_crosspost', count( $object_ids ), $redirect );
@@ -60,9 +59,10 @@ function rudr_crosspost_handle_bulk_actions( $redirect, $doaction, $object_ids )
 
 		$blog_id = str_replace( 'crosspost_to_', '', $doaction );
 
-		// let's set a coupld $_POST parameters to trick the plugin
+		// behaving like it is a normal post update, not a bulk edit thing
 		$_POST[ 'cms_custom_nonce' ] = wp_create_nonce( 'cms-metabox-check' );
 		$_POST[ 'action' ] = 'editpost';
+		unset( $_REQUEST[ '_wpnonce' ] );
 
 		foreach ( $object_ids as $object_id ) {
 			if( $object = get_post( $object_id ) ) {
@@ -71,7 +71,7 @@ function rudr_crosspost_handle_bulk_actions( $redirect, $doaction, $object_ids )
 			}
 		}
 
-		$redirect = add_query_arg( 'rudr_crosspost_done', count( $object_ids ), $redirect );
+		$redirect = add_query_arg( 'rudr_crossposted', count( $object_ids ), $redirect );
 
 
 	}
@@ -94,11 +94,11 @@ function misha_bulk_action_notices() {
 
 	}
 
-	if( ! empty( $_REQUEST[ 'rudr_crosspost_done' ] ) ) {
+	if( ! empty( $_REQUEST[ 'rudr_crossposted' ] ) ) {
 
 		printf( '<div id="message" class="updated notice is-dismissible"><p>' .
-			_n( '%s post has been successfully crossposted.', '%s posts have been successfully crossposted.', absint( $_REQUEST[ 'rudr_crosspost_done' ] ) )
-			. '</p></div>', absint( $_REQUEST[ 'rudr_crosspost_done' ] ) );
+			_n( '%s item has been successfully crossposted.', '%s items have been successfully crossposted.', absint( $_REQUEST[ 'rudr_crossposted' ] ) )
+			. '</p></div>', absint( $_REQUEST[ 'rudr_crossposted' ] ) );
 
 	}
 
