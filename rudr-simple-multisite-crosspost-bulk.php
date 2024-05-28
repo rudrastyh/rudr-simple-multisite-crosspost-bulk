@@ -30,7 +30,12 @@ class Rudr_SMC_Bulk{
 			return;
 		}
 
-		$post_types = Rudr_Simple_Multisite_Crosspost::get_allowed_post_types();
+		// TODO $post_types = Rudr_Simple_Multisite_Crosspost::get_allowed_post_types();
+		$post_types = get_post_types( array( 'show_ui' => true ) );
+		$allowed_post_types = ( $allowed_post_types = get_site_option( 'rudr_smc_post_types' ) ) ? $allowed_post_types : array();
+		if( $allowed_post_types && is_array( $allowed_post_types ) ) {
+			$post_types = array_intersect( $post_types, $allowed_post_types );
+		}
 		if( $post_types ) {
 			foreach( $post_types as $post_type ) {
 				add_filter( 'bulk_actions-edit-' . $post_type, array( $this, 'bulk_action' ) );
@@ -102,6 +107,9 @@ class Rudr_SMC_Bulk{
 
 	// doing the bulk
 	private function do_bulk( $object_ids, $blog_id, $post_type ) {
+
+		// a lot of fields are exluded in bulk edit, we can not exclude them here as well
+		unset( $_REQUEST[ '_wpnonce' ] );
 
 		// we will need to double check whether this status is allowed
 		$allowed_post_statuses = ( $allowed_post_statuses = get_site_option( 'rudr_smc_post_statuses' ) ) ? $allowed_post_statuses : array( 'publish' );
