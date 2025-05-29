@@ -4,7 +4,7 @@
  * Author: Misha Rudrastyh
  * Author URI: https://rudrastyh.com
  * Description: Allows to crosspost multiple posts at once.
- * Version: 2.0
+ * Version: 2.1
  * Plugin URI: https://rudrastyh.com/support/bulk-crossposting
  * Network: true
  */
@@ -30,12 +30,7 @@ class Rudr_SMC_Bulk{
 			return;
 		}
 
-		// TODO $post_types = Rudr_Simple_Multisite_Crosspost::get_allowed_post_types();
-		$post_types = get_post_types( array( 'show_ui' => true ) );
-		$allowed_post_types = ( $allowed_post_types = get_site_option( 'rudr_smc_post_types' ) ) ? $allowed_post_types : array();
-		if( $allowed_post_types && is_array( $allowed_post_types ) ) {
-			$post_types = array_intersect( $post_types, $allowed_post_types );
-		}
+		$post_types = Rudr_Simple_Multisite_Crosspost::get_allowed_post_types();
 		if( $post_types ) {
 			foreach( $post_types as $post_type ) {
 				add_filter( 'bulk_actions-edit-' . $post_type, array( $this, 'bulk_action' ) );
@@ -49,14 +44,8 @@ class Rudr_SMC_Bulk{
 	public function bulk_action( $bulk_array ) {
 
 		$blogs = Rudr_Simple_Multisite_Crosspost::get_blogs();
-		$use_domains = apply_filters( 'rudr_smc_use_domains_as_names', false );
-
 		if( $blogs ) {
 			foreach( $blogs as $blog_id => $blogname ) {
-				if( $use_domains ) {
-					$blog = get_site( $blog_id );
-					$blogname = $blog->domain . $blog->path;
-				}
 				$bulk_array[ 'crosspost_to_' . absint( $blog_id ) ] = 'Crosspost to ' . esc_attr( $blogname );
 			}
 		}
@@ -142,6 +131,8 @@ class Rudr_SMC_Bulk{
 			} else {
 				$c->crosspost( $object, $blog_ids );
 			}
+
+			do_action( 'save_post', $object_id, $object, true ); // TODO add $update parameter value
 		}
 
 	}
