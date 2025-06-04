@@ -4,7 +4,7 @@
  * Author: Misha Rudrastyh
  * Author URI: https://rudrastyh.com
  * Description: Allows to crosspost multiple posts at once.
- * Version: 2.1
+ * Version: 2.2
  * Plugin URI: https://rudrastyh.com/support/bulk-crossposting
  * Network: true
  */
@@ -132,7 +132,6 @@ class Rudr_SMC_Bulk{
 				$c->crosspost( $object, $blog_ids );
 			}
 
-			do_action( 'save_post', $object_id, $object, true ); // TODO add $update parameter value
 		}
 
 	}
